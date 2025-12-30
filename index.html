@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>99天✨</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind 扩展色 -->
+  <script>
+    tailwind.config={
+      theme:{
+        extend:{
+          colors:{
+            cute:{
+              pink:'#FF85A2',lightpink:'#FFE6EF',purple:'#C792EA',mint:'#89DDFF',
+              yellow:'#FFCB74',coral:'#FF7851',rose:'#F15BB5',sky:'#00BBF9',
+              lavender:'#9B5DE5',cream:'#FFF9E8'
+            }
+          },
+          fontFamily:{cute:['Nunito','sans-serif']}
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* ========== 基础样式 ========== */
+    body {
+      font-family: 'Nunito', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ========== 启动画面 ========== */
+    #intro-screen{
+      position:fixed;inset:0;z-index:9999;
+      background:#000;
+      transition:opacity 1.5s ease-out;
+    }
+    #intro-screen.intro-fade-out{opacity:0;pointer-events:none}
+    #intro-canvas{width:100%;height:100%;display:block}
+    #intro-pinkboard{position:absolute;inset:0;width:100%;height:100%}
+    #intro-center{
+      position:absolute;top:50%;left:50%;
+      transform:translate(-50%,-50%);
+      font-family:STKaiti,serif;
+      font-size:clamp(28px,6vw,48px);
+      color:#f584b7;
+      pointer-events:none;
+      z-index:10;
+    }
+
+    /* ========== 动画工具类 ========== */
+    .text-shadow-cute{text-shadow:1px 1px 3px rgba(0,0,0,.1)}
+    .bounce-cute{animation:bounceCute .6s ease infinite alternate}
+    .float-cute {animation: floatAround 15s ease-in-out infinite;transition: all 0.3s ease;}
+    .rotate-cute{animation:rotateCute 8s linear infinite}
+    .sparkle{animation:sparkle 1.5s ease-in-out infinite}
+    .photo-flip{animation:flip .8s ease-out}
+    .quote-animation{animation:quoteMove var(--duration) ease-in-out forwards}
+    .heart-pulse{animation:heartPulse 2s ease-in-out infinite}
+    .letter-expand{animation:expandLetter .8s ease-out forwards}
+    .letter-collapse{animation:collapseLetter .6s ease-in-out forwards}
+    .paper-texture{background-image:url(https://picsum.photos/seed/paper/1000/1000);background-blend-mode:overlay;background-size:cover}
+    .heart-float{animation:heartFloat var(--heart-duration) ease-out forwards}
+    .modal-fade-in{animation:modalFadeIn .3s ease-out forwards}
+    .modal-scale-in{animation:modalScaleIn .3s ease-out forwards}
+
+    /* ========== 动画关键帧 ========== */
+    @keyframes bounceCute{from{transform:translateY(0)}to{transform:translateY(-8px)}}
+    @keyframes floatAround {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      25% { transform: translate(30px, -20px) rotate(5deg); }
+      50% { transform: translate(-20px, -40px) rotate(-3deg); }
+      75% { transform: translate(10px, -10px) rotate(2deg); }
+      100% { transform: translate(0, 0) rotate(0deg); }
+    }
+    @keyframes rotateCute{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+    @keyframes sparkle{0%,100%{opacity:1}50%{opacity:.7;transform:scale(1.05)}}
+    @keyframes flip{0%{transform:rotateY(90deg);opacity:0}100%{transform:rotateY(0);opacity:1}}
+    @keyframes quoteMove{0%{transform:rotate(var(--start-rotate)) scale(0);opacity:0}20%{transform:rotate(var(--mid-rotate)) scale(1.1);opacity:1}100%{transform:rotate(var(--end-rotate)) scale(.8);opacity:0}}
+    @keyframes heartPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+    @keyframes expandLetter{0%{max-height:0;opacity:0;transform:translateY(-20px)}100%{max-height:2000px;opacity:1;transform:translateY(0)}}
+    @keyframes collapseLetter{0%{max-height:2000px;opacity:1;transform:translateY(0)}100%{max-height:0;opacity:0;transform:translateY(-20px)}}
+    @keyframes heartFloat{0%{transform:translate(0,0) rotate(var(--heart-rotate)) scale(1);opacity:.9}100%{transform:translate(var(--heart-x),var(--heart-y)) rotate(var(--heart-rotate-end)) scale(.3);opacity:0}}
+    @keyframes modalFadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes modalScaleIn{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+
+    /* ========== 照片翻转样式 ========== */
+    .photo-container {
+      perspective: 1000px;
+      height: 180px;
+    }
+    .photo-card {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+      cursor: pointer;
+    }
+    .photo-front, .photo-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 1rem;
+      overflow: hidden;
+    }
+    .photo-back {
+      transform: rotateY(180deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: linear-gradient(135deg, var(--back-color) 0%, var(--back-color-light) 100%);
+      color: white;
+      text-align: center;
+      font-size: clamp(0.8rem, 2vw, 1rem);
+      font-weight: 600;
+    }
+    .flipped {
+      transform: rotateY(180deg);
+    }
+
+    /* ========== 轮播图样式 ========== */
+    .carousel {
+      overflow: hidden;
+      position: relative;
+    }
+    .carousel-inner {
+      display: flex;
+      transition: transform 0.5s ease;
+    }
+    .carousel-page {
+      min-width: 100%;
+    }
+    .carousel-nav {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .carousel-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: #ddd;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .carousel-dot.active {
+      background-color: #FF85A2;
+    }
+    .carousel-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background-color: rgba(255, 255, 255, 0.7);
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 10;
+      transition: all 0.3s;
+    }
+    .carousel-btn:hover {
+      background-color: white;
+      transform: translateY(-50%) scale(1.1);
+    }
+    .prev-btn {
+      left: 10px;
+    }
+    .next-btn {
+      right: 10px;
+    }
+
+    /* ========== 图片查看器样式 ========== */
+    #imageViewer {
+      opacity: 0;
+      transition: opacity 0.3s ease-out;
+    }
+    #imageViewer.active {
+      opacity: 1;
+    }
+    #previewImage {
+      transform: scale(0.95);
+      transition: transform 0.3s ease-out;
+    }
+    #imageViewer.active #previewImage {
+      transform: scale(1);
+    }
+  </style>
+</head>
+
+<body class="font-cute text-gray-800 overflow-x-hidden bg-black">
+  <!-- ==================== 启动画面 ==================== -->
+  <div id="intro-screen">
+    <!-- 黑客文字雨 -->
+    <canvas id="intro-canvas"></canvas>
+    <!-- 爱心粒子 -->
+    <canvas id="intro-pinkboard"></canvas>
+    <!-- 中央文字 -->
+    <div id="intro-center">love u</div>
+  </div>
+
+  <!-- ==================== 主页面 ==================== -->
+  <div id="main-content" class="bg-cute-lightpink min-h-screen">
+    <!-- 鼠标跟随爱心容器 -->
+    <div id="mouseHearts" class="fixed inset-0 pointer-events-none z-20 overflow-hidden"></div>
+
+    <main class="relative z-10 max-w-5xl mx-auto px-4 py-6">
+      <!-- 顶部标题 -->
+      <header class="pt-12 pb-6 px-4 text-center">
+        <div class="inline-block relative">
+          <h1 id="timeCounter" class="text-[clamp(2rem,6vw,3.8rem)] font-extrabold text-cute-pink mb-2 bounce-cute">计算中...</h1>
+          <span class="absolute -top-4 -right-6 text-cute-yellow text-2xl rotate-cute"><i class="fa fa-star"></i></span>
+        </div>
+        <p class="text-[clamp(1rem,2vw,1.3rem)] text-gray-700 max-w-xl mx-auto mt-4">
+          和你在一起很幸福～ 💖
+        </p>
+        <div class="mt-4 flex justify-center gap-4">
+          <span class="w-2 h-2 bg-cute-pink rounded-full"></span>
+          <span class="w-2 h-2 bg-cute-purple rounded-full"></span>
+          <span class="w-2 h-2 bg-cute-mint rounded-full"></span>
+          <span class="w-2 h-2 bg-cute-yellow rounded-full"></span>
+        </div>
+      </header>
+
+      <!-- 功能按钮 -->
+      <div class="flex flex-col sm:flex-row justify-center gap-4 mb-10 flex-wrap">
+        <button id="loveBtn" class="bg-gradient-to-r from-cute-pink to-cute-rose text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105 flex items-center justify-center gap-2 sparkle">
+          <i class="fa fa-heart heart-pulse"></i><span>一些话</span>
+        </button>
+        <button id="letterBtn" class="bg-gradient-to-r from-cute-yellow to-cute-coral text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105 flex items-center justify-center gap-2 sparkle">
+          <i class="fa fa-envelope heart-pulse"></i><span>给你的信</span>
+        </button>
+        <button id="audioBtn" class="bg-gradient-to-r from-cute-mint to-cute-sky text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105 flex items-center justify-center gap-2 sparkle">
+          <i class="fa fa-music heart-pulse"></i><span>listen</span>
+        </button>
+
+<!-- 音频播放器 (默认隐藏) -->
+<div id="audioPlayer" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-sm rounded-full shadow-xl p-3 z-40 hidden flex items-center gap-4 max-w-md w-full mx-4">
+  <button id="togglePlay" class="w-10 h-10 bg-cute-mint rounded-full flex items-center justify-center text-white">
+    <i class="fa fa-play"></i>
+  </button>
+  <div class="flex-1 min-w-0">
+    <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div id="progressBar" class="h-full bg-cute-sky w-0 transition-all"></div>
+    </div>
+    <div class="flex justify-between text-xs text-gray-500 mt-1">
+      <span id="currentTime">00:00</span>
+      <span id="totalTime">00:00</span>
+    </div>
+  </div>
+  <button id="closeAudio" class="w-8 h-8 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 flex items-center justify-center">
+    <i class="fa fa-times"></i>
+  </button>
+</div>
+      </div>
+
+      <!-- 回忆杀轮播区 -->
+      <section class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-4 md:p-6 mb-10" id="photoSection">
+        <h2 class="text-xl md:text-2xl font-bold text-cute-pink mb-6 text-center"><i class="fa fa-camera-retro mr-2"></i>一些moment</h2>
+        
+        <div class="carousel">
+          <div class="carousel-inner" id="carouselInner"></div>
+          
+          <button class="carousel-btn prev-btn" id="prevBtn">
+            <i class="fa fa-chevron-left text-cute-pink"></i>
+          </button>
+          <button class="carousel-btn next-btn" id="nextBtn">
+            <i class="fa fa-chevron-right text-cute-pink"></i>
+          </button>
+          
+          <div class="carousel-nav" id="carouselNav"></div>
+        </div>
+        
+        <p class="text-center mt-6 text-gray-600 text-sm">单击照片翻转 | 双击查看大图～</p>
+      </section>
+
+      <!-- 情书区域 -->
+      <section class="max-w-3xl mx-auto mb-10 relative z-10">
+        <div id="letterContainer" class="bg-cute-cream/90 paper-texture rounded-3xl shadow-xl overflow-hidden border-2 border-cute-yellow/30">
+          <div id="letterContent" class="p-6 md:p-8 hidden overflow-hidden">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-2xl md:text-3xl font-bold text-cute-rose flex items-center"><i class="fa fa-heart mr-3 text-cute-pink"></i>致我最最最爱的宝宝</h2>
+              <span class="text-cute-yellow font-semibold">99天纪念</span>
+            </div>
+            <div class="space-y-4 text-gray-700 leading-relaxed">
+              <p>亲爱的：</p>
+              <p>我承认我是一个别扭又复杂的小孩。我一直在等，等一个人可以懂我的敏感与晦涩，等一个人知我的叛逆与疯狂，等一个人和我一起去吃汤汤粉粉日料西餐火锅串串和路边的早餐，等一个人接住我的情绪和堕落，等一个人来爱我。终于，你出现了。是意外，也是惊喜。有的时候我在你身上看到某种熟悉的底色，像是在镜中与另一个自己相遇；有的时候我又发觉我们像契合的两块拼图，我的残缺，你刚好吻合。我开始慢慢学着信任，学着去爱。</p>
+              <p>我一直不明白爱是什么。对我来说，爱太虚无缥缈，盛大又遥远。像阳光下的泡沫，触碰的那一刻，就会消失。于是我开始安慰自己，爱情只是调味品，可有可无，这样就不会因为握不住而失落。但是和你在一起之后，爱成了很多具体的瞬间——下雨时那把倾斜的伞，崩溃时那双轻拍我安抚的手，散步时转头看到你的侧脸，拥抱时炽热的体温和熟悉的味道，对视时那双亮亮的眼睛，都让我再也无法否认，爱是如此真实，而我是真的爱你。</p>
+              <p>这个世界太严厉了，如果没有爱的话，一个人走，未免太辛苦了。爱是我们成双的影子，从此再也不怕浪迹天涯。</p>
+              <p>我总像被困在一个笼子里，焦虑又疲惫，在一件又一件事情上反复钻着牛角尖。你像是我的镇静剂，仅仅是被你拥在怀中，闻你身上的味道，就能让我安心很多，放松很多。你是我疲惫生活的解药。我们之间也会有很多争吵，怀疑，可在爱面前就显得太过渺小。你总是担心以后我会不会离开你，但是你要相信，我只有你一个，也只要你一个。</p>
+              <p>你说我没尝过爱情的甜。这次，终于也是轮到我了。世界上没有天生合适的两个人，我们也有很多争吵很多不开心，但是我还是爱你。我相信只要我们还是一样的想法，争吵也没关系，我们最终还是会拼凑出想要的结果。</p>
+              <p>99天只是开始，你像礼物一样出现了，陪我从新鲜感走到归属感，陪伴胜过所有承诺。虽然我们两个的感情远远超过了99天，但是这个日期对我来说还是有很大的意义。你也了解，我确实是个固执的人，所以无论我们两个已经多么好了，但是我终究需要一个划分我们关系的瞬间，这个瞬间让我安心，让我真真切切感受到，你是我的。我想和你一起走过更多的春夏秋冬。</p>
+              <p>这个网页断断续续做了很多天，因为我也确实是比较忙。其实很多次想不要做了，因为多看几次我觉得好丑啊好内个啊又好肉麻，啊啊啊啊。而且我水平有限......刚做出来感觉自己还挺牛的，但是多看几次感觉....丑丑的土土的。其实我跟你说过，我没那么喜欢敲代码，但是我还是很想把我们两个记录下来，以各种方式。当我一点一点把我和你放进来，敲代码，好像也没有那么讨厌。果然，爱和被爱，都很幸福。</p>
+              <p>还有那个录音，是我暑假的时候就录好了，打算我们100天的时候再给你听，因为我知道，我们一定会走到我们的100天。（背景能听到手机震动，那是你在给我发消息嘻嘻）页面和录音你都不许嫌弃！！不然我打死你！</p>
+              <p>知道你不爱看字，但是总有很多话说不出口，又想让你知道。这次不准备写很长的，怕你没耐心看，但是还是啰啰嗦嗦了那么多。总之，一定记住，我爱你。</p>
+              <p class="font-bold text-cute-pink mt-6">萱</p>
+              <p class="text-right text-gray-500">2026年 · 我们的99天</p>
+            </div>
+            <div class="mt-8 flex justify-center gap-6">
+              <div class="w-12 h-12 bg-cute-pink/20 rounded-full flex items-center justify-center float-cute"><i class="fa fa-heart text-xl text-cute-pink"></i></div>
+              <div class="w-10 h-10 bg-cute-purple/20 rounded-full flex items-center justify-center float-cute" style="animation-delay:.5s"><i class="fa fa-star text-xl text-cute-purple"></i></div>
+              <div class="w-12 h-12 bg-cute-yellow/20 rounded-full flex items-center justify-center float-cute" style="animation-delay:1s"><i class="fa fa-kiss-wink-heart text-xl text-cute-yellow"></i></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 装饰 -->
+      <div class="flex justify-center gap-6 mb-12 flex-wrap">
+        <div class="w-14 h-14 bg-cute-pink/20 rounded-full flex items-center justify-center float-cute"><i class="fa fa-heart text-xl text-cute-pink"></i></div>
+        <div class="w-16 h-16 bg-cute-purple/20 rounded-full flex items-center justify-center float-cute" style="animation-delay:.5s"><i class="fa fa-gift text-xl text-cute-purple"></i></div>
+        <div class="w-14 h-14 bg-cute-mint/20 rounded-full flex items-center justify-center float-cute" style="animation-delay:1s"><i class="fa fa-smile-o text-xl text-cute-mint"></i></div>
+        <div class="w-16 h-16 bg-cute-yellow/20 rounded-full flex items-center justify-center float-cute" style="animation-delay:1.5s"><i class="fa fa-star text-xl text-cute-yellow"></i></div>
+      </div>
+    </main>
+
+    <footer class="relative z-10 py-8 px-4 text-center">
+      <p class="text-cute-pink font-semibold text-lg">希望和你永远幸福下去～ ✨❤️✨</p>
+      <p class="text-gray-600 text-sm mt-2">我们的 · 第 99 天！</p>
+    </footer>
+
+    <!-- ==================== 弹窗组件 ==================== -->
+    <!-- 满屏情话弹窗 -->
+    <div id="loveModal" class="fixed inset-0 bg-white z-50 hidden overflow-hidden">
+      <div class="absolute top-6 right-6 z-20">
+        <button id="closeLoveModal" class="bg-cute-pink/10 hover:bg-cute-pink/20 text-cute-pink w-12 h-12 rounded-full flex items-center justify-center shadow-md transition-all transform hover:scale-110"><i class="fa fa-times text-xl"></i></button>
+      </div>
+      <div id="quotesContainer" class="fixed inset-0 overflow-hidden"></div>
+      <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-3 z-10">
+        <span class="w-3 h-3 bg-cute-pink rounded-full animate-pulse"></span>
+        <span class="w-3 h-3 bg-cute-purple rounded-full animate-pulse" style="animation-delay:.3s"></span>
+      </div>
+    </div>
+
+    <!-- 密码弹窗 -->
+    <div id="passwordModal" class="fixed inset-0 bg-black/50 z-50 hidden modal-fade-in flex items-center justify-center p-4">
+      <div class="bg-white rounded-3xl shadow-2xl p-6 md:p-8 w-full max-w-md modal-scale-in relative">
+        <div class="text-center mb-6">
+          <div class="w-16 h-16 bg-cute-pink/20 rounded-full flex items-center justify-center mx-auto mb-4 float-cute"><i class="fa fa-lock text-2xl text-cute-pink"></i></div>
+          <h3 class="text-2xl font-bold text-cute-rose">这是一封私密信件</h3>
+          <p class="text-gray-600 mt-2">请输入密码解锁内容</p>
+        </div>
+        <div class="mb-4">
+          <div class="relative">
+            <input type="password" id="passwordInput" class="w-full px-5 py-3 rounded-xl border-2 border-gray-200 focus:border-cute-pink focus:outline-none transition-all" placeholder="请输入密码">
+            <button id="togglePassword" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-cute-pink"><i class="fa fa-eye-slash"></i></button>
+          </div>
+          <p id="passwordError" class="text-red-500 text-sm mt-2 hidden text-center">密码错误，请重试</p>
+        </div>
+        <button id="submitPassword" class="w-full bg-gradient-to-r from-cute-pink to-cute-rose text-white font-bold py-3 px-6 rounded-xl shadow-md hover:shadow-lg transition-all transform hover:scale-[1.02]">解锁信件</button>
+      </div>
+    </div>
+
+    <!-- 图片查看器弹窗 -->
+    <div id="imageViewer" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center p-4">
+      <button id="closeImageViewer" class="absolute top-6 right-6 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-white/20 transition-all">
+        <i class="fa fa-times text-xl"></i>
+      </button>
+      <img id="previewImage" src="" alt="大图预览" class="max-w-[90%] max-h-[90vh] object-contain" />
+    </div>
+  </div>
+
+  <!-- 背景爱心容器 -->
+  <div id="floatingHearts" class="fixed inset-0 pointer-events-none z-0"></div>
+
+  <!-- ==================== 脚本区域 ==================== -->
+  <script>
+    /* ==================== 1. 启动画面逻辑 ==================== */
+    (function(){
+      /* 黑客文字雨 */
+      const canvas=document.getElementById('intro-canvas'),ctx=canvas.getContext('2d');
+      canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+      const texts='I LOVE U'.split(''),fontSize=16,columns=canvas.width/fontSize,drops=[];
+      for(let i=0;i<columns;i++)drops[i]=1;
+      function drawRain(){
+        ctx.fillStyle='rgba(0,0,0,.05)';ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle='#f584b7';ctx.font=fontSize+'px arial';
+        for(let i=0;i<drops.length;i++){
+          const text=texts[Math.floor(Math.random()*texts.length)];
+          ctx.fillText(text,i*fontSize,drops[i]*fontSize);
+          if(drops[i]*fontSize>canvas.height||Math.random()>.95)drops[i]=0;
+          drops[i]++;
+        }
+      }
+      const rainId=setInterval(drawRain,33);
+
+      /* 爱心粒子 */
+      const introBoard=document.getElementById('intro-pinkboard'),ictx=introBoard.getContext('2d');
+      introBoard.width=window.innerWidth;introBoard.height=window.innerHeight;
+      const settings={particles:{length:500,duration:2,velocity:100,effect:-.75,size:30}};
+      function Point(x,y){this.x=x||0;this.y=y||0}Point.prototype.clone=function(){return new Point(this.x,this.y)};
+      Point.prototype.length=function(l){const a=Math.atan2(this.y,this.x);this.x=Math.cos(a)*l;this.y=Math.sin(a)*l;return this};
+      function Particle(){this.position=new Point();this.velocity=new Point();this.acceleration=new Point();this.age=0}
+      Particle.prototype.update=function(dt){this.position.x+=this.velocity.x*dt;this.position.y+=this.velocity.y*dt;this.velocity.x+=this.acceleration.x*dt;this.velocity.y+=this.acceleration.y*dt;this.age+=dt};
+      Particle.prototype.draw=function(ctx,img){const ease=t=>{t--;return t*t*t+1},s=img.width*ease(this.age/settings.particles.duration);ctx.globalAlpha=1-this.age/settings.particles.duration;ctx.drawImage(img,this.position.x-s/2,this.position.y-s/2,s,s)};
+      function ParticlePool(len){const p=new Array(len);for(let i=0;i<len;i++)p[i]=new Particle();let firstActive=0,firstFree=0;this.add=function(x,y,dx,dy){p[firstFree].position.x=x;p[firstFree].position.y=y;p[firstFree].velocity.x=dx;p[firstFree].velocity.y=dy;p[firstFree].acceleration.x=dx*settings.particles.effect;p[firstFree].acceleration.y=dy*settings.particles.effect;p[firstFree].age=0;firstFree++;if(firstFree===len)firstFree=0};this.update=function(dt){let i;if(firstActive<firstFree)for(i=firstActive;i<firstFree;i++)p[i].update(dt);if(firstFree<firstActive){for(i=firstActive;i<len;i++)p[i].update(dt);for(i=0;i<firstFree;i++)p[i].update(dt)}while(p[firstActive].age>=settings.particles.duration&&firstActive!==firstFree){firstActive++;if(firstActive===len)firstActive=0}};this.draw=function(ctx,img){if(firstActive<firstFree)for(i=firstActive;i<firstFree;i++)p[i].draw(ctx,img);if(firstFree<firstActive){for(i=firstActive;i<len;i++)p[i].draw(ctx,img);for(i=0;i<firstFree;i++)p[i].draw(ctx,img)}}}
+      (function(cvs){
+        const ctx=cvs.getContext('2d'),particles=new ParticlePool(settings.particles.length),rate=settings.particles.length/settings.particles.duration;let time;
+        function pointOnHeart(t){return new Point(160*Math.pow(Math.sin(t),3),130*Math.cos(t)-50*Math.cos(2*t)-20*Math.cos(3*t)-10*Math.cos(4*t)+25)}
+        const image=(function(){
+          const c=document.createElement('canvas'),x=c.getContext('2d');c.width=c.height=settings.particles.size;
+          function to(t){const p=pointOnHeart(t);p.x=settings.particles.size/2+p.x*settings.particles.size/350;p.y=settings.particles.size/2-p.y*settings.particles.size/350;return p}
+          x.beginPath();let t=-Math.PI,p=to(t);x.moveTo(p.x,p.y);while(t<Math.PI){t+=.01;p=to(t);x.lineTo(p.x,p.y)}x.closePath();x.fillStyle='#ea80b0';x.fill();
+          const img=new Image();img.src=c.toDataURL();return img
+        })();
+        function render(){
+          requestAnimationFrame(render);const newTime=Date.now()/1000,dt=newTime-(time||newTime);time=newTime;
+          ctx.clearRect(0,0,cvs.width,cvs.height);const amount=rate*dt;
+          for(let i=0;i<amount;i++){const pos=pointOnHeart(Math.PI-2*Math.PI*Math.random()),dir=pos.clone().length(settings.particles.velocity);particles.add(cvs.width/2+pos.x,cvs.height/2-pos.y,dir.x,-dir.y)}
+          particles.update(dt);particles.draw(ctx,image)
+        }
+        window.onresize=()=>{cvs.width=window.innerWidth;cvs.height=window.innerHeight};
+        setTimeout(()=>{window.onresize();render()},10)
+      })(introBoard);
+
+      /* 5秒后淡出启动画面 */
+      setTimeout(()=>{
+        document.getElementById('intro-screen').classList.add('intro-fade-out');
+        clearInterval(rainId);
+        setTimeout(()=>{
+          document.getElementById('main-content').style.opacity='1';
+          document.getElementById('main-content').style.transition='opacity 1s ease-in';
+        },1000);
+      },5000);
+    })();
+
+    /* ==================== 2. 主页面逻辑 ==================== */
+    (function(){
+      // 配置常量
+      const CORRECT_PASSWORD='251007'; // 情书密码
+      const START_DATE = new Date('2025-10-07'); // 计时起始日期
+      
+      // 3页照片（每页8张）
+      const photos = [
+        [
+          './img/1.jpg',
+          './img/2.jpg',
+          './img/3.jpg',
+          './img/12.jpg',
+          './img/5.jpg',
+          './img/6.jpg',
+          './img/7.jpg',
+          './img/8.jpg'
+        ],
+        [
+          './img/9.png',
+          './img/10.png',
+          './img/11.jpg',
+          './img/4.jpg',
+          './img/13.png',
+          './img/14.jpg',
+          './img/15.jpg',
+          './img/16.jpg'
+        ],
+        [
+          './img/17.jpg',
+          './img/18.jpg',
+          './img/19.jpg',
+          './img/20.jpg',
+          './img/21.jpg',
+          './img/22.jpg',
+          './img/23.jpg',
+          './img/24.jpg'
+        ]
+      ];
+      
+      // 照片背面的情话
+      const photoQuotes = [
+        "喜欢和你贴贴~",
+        "永远都要牵着手哦👫",
+        "一起去天津，没化妆就裹这么严实😄",
+        "很喜欢的官宣照片~~",
+        "躺我腿上睡觉很像一只小狗狗🐶",
+        "一起看电影偷偷拍的~偷偷牵手",
+        "给我捏腿嘻嘻",
+        "被偷拍了，开心~",
+        "第一次一起去旅游~（虽然很近）",
+        "喜欢和你一起逛公园😘",
+        "陪我逛那么久累坏了我的宝💤",
+        "乱拍的小小幸福💗",
+        "天津五大道（拍的我有点丑）",
+        "这张拍的我有点好看，喜欢~~",
+        "我们的！第一个冬❄️今朝若是同淋雪，此生也算共白头",
+        "小狗就是如此之萌！",
+        "光是看影子都觉得好幸福",
+        "哎呀真的好惊喜啊你主动送我圣诞礼物",
+        "小猪和小狗~",
+        "我拍的！",
+        "嘻嘻记得那天是我把你惹生气了",
+        "你答应我的，等我毕业再跟我去一次什刹海",
+        "其实我一直记得当时秋天的第一杯奶茶",
+        "我宝宝送到门口的夜宵非常之美味"
+      ];
+      
+      // 满屏情话文案
+      const loveQuotes=[
+        '我永远在你身边', '希望每年都有你', '99天只是开始呀！', '我想一直陪着你',
+        '我们一定要一直一直在一起', '你是我的靠山', '要和你吃好多饭！', '最喜欢黏着你啦～',
+        '你是我最最最爱的小小狗！', '有你在每天都开心！', '我一直都在', '99天快乐！',
+        '潮起潮落人聚人散我们永远是我们', '超级超级爱你！', '要真诚要一直爱我', '我不会让你输',
+        '我们要成为对方最最重要的人', '我一直爱你，你可以反复确认', '有幸相遇，恰好合拍',
+        '没有什么避风港，有你就踏实', '我爱你', '想你啦！', '想和你岁岁又年年',
+        '有你真好！', '即使生活不易，我也想要你在未来里', '爱是与你共度温柔琐碎',
+        '我一次又一次地爱上你', '有你就像有了全世界', '爱是奇迹', '和你在一起就是幸福',
+        '你是我的唯一', '你是从天而降的礼物', '喜欢独一无二的你', '好幸运，我们遇见了',
+        '被爱着', '我们之间胜过了所有人'
+      ];
+      
+      // 颜色配置
+      const colorClasses=['text-cute-pink','text-cute-purple','text-cute-mint','text-cute-yellow','text-cute-coral','text-cute-rose','text-cute-sky','text-cute-lavender'];
+      const heartColors=['rgba(255,133,162,.8)','rgba(199,146,234,.8)','rgba(137,221,255,.8)','rgba(255,203,116,.8)','rgba(255,120,81,.8)','rgba(241,91,181,.8)','rgba(0,187,249,.8)','rgba(155,93,229,.8)'];
+      const backColors = [
+        { main: '#FF85A2', light: '#FFB6C1' }, // 粉色
+        { main: '#C792EA', light: '#E1BEE7' }, // 紫色
+        { main: '#89DDFF', light: '#BBDEFB' }, // 薄荷色
+        { main: '#FFCB74', light: '#FFE0B2' }  // 黄色
+      ];
+
+      /* ---- 实时天时分秒计时功能 ---- */
+      function initTimeCounter() {
+        const counterElement = document.getElementById('timeCounter');
+        
+        // 格式化数字为两位数
+        function formatNumber(num) {
+          return num.toString().padStart(2, '0');
+        }
+
+        // 更新时间差
+        function updateTime() {
+          const now = new Date();
+          const timeDiff = now - START_DATE;
+          const totalSeconds = Math.abs(Math.floor(timeDiff / 1000));
+
+          // 计算天、时、分、秒
+          const days = Math.floor(totalSeconds / 86400);
+          const remainingSeconds = totalSeconds % 86400;
+          const hours = Math.floor(remainingSeconds / 3600);
+          const minutes = Math.floor((remainingSeconds % 3600) / 60);
+          const seconds = remainingSeconds % 60;
+
+          // 格式化显示
+          const timeString = `${days}天${formatNumber(hours)}时${formatNumber(minutes)}分${formatNumber(seconds)}秒`;
+          
+          if (timeDiff >= 0) {
+            counterElement.textContent = `${timeString}啦！🥳`;
+          } else {
+            counterElement.textContent = `还有${timeString}开始！🥰`;
+          }
+        }
+
+        // 立即更新 + 每秒刷新
+        updateTime();
+        setInterval(updateTime, 1000);
+      }
+/* ---- 音频播放功能 ---- */
+function initAudioPlayer() {
+  // 获取DOM元素
+  const audioBtn = document.getElementById('audioBtn');
+  const audioPlayer = document.getElementById('audioPlayer');
+  const togglePlay = document.getElementById('togglePlay');
+  const progressBar = document.getElementById('progressBar');
+  const currentTimeEl = document.getElementById('currentTime');
+  const totalTimeEl = document.getElementById('totalTime');
+  const closeAudio = document.getElementById('closeAudio');
+  
+  // 创建音频元素 (替换为你的音频文件URL)
+  const audio = new Audio('./aud/w.mp3'); // 请替换为实际音频文件路径
+  
+  // 格式化时间显示
+  function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+  
+  // 更新进度条
+  function updateProgress() {
+    if (isNaN(audio.duration)) return;
+    
+    const percent = (audio.currentTime / audio.duration) * 100;
+    progressBar.style.width = `${percent}%`;
+    currentTimeEl.textContent = formatTime(audio.currentTime);
+    totalTimeEl.textContent = formatTime(audio.duration);
+  }
+  
+  // 切换播放/暂停
+  function togglePlayPause() {
+    if (audio.paused) {
+      audio.play();
+      togglePlay.innerHTML = '<i class="fa fa-pause"></i>';
+    } else {
+      audio.pause();
+      togglePlay.innerHTML = '<i class="fa fa-play"></i>';
+    }
+  }
+  
+  // 进度条点击跳转
+  progressBar.parentElement.addEventListener('click', (e) => {
+    const rect = progressBar.parentElement.getBoundingClientRect();
+    const pos = (e.clientX - rect.left) / rect.width;
+    audio.currentTime = pos * audio.duration;
+  });
+  
+  // 事件监听
+  audioBtn.addEventListener('click', () => {
+    audioPlayer.classList.toggle('hidden');
+    if (!audioPlayer.classList.contains('hidden')) {
+      // 显示时更新进度信息
+      setTimeout(updateProgress, 100);
+    }
+  });
+  
+  togglePlay.addEventListener('click', togglePlayPause);
+  closeAudio.addEventListener('click', () => {
+    audioPlayer.classList.add('hidden');
+  });
+  
+  audio.addEventListener('timeupdate', updateProgress);
+  audio.addEventListener('loadedmetadata', updateProgress);
+  
+  // 音频结束时重置状态
+  audio.addEventListener('ended', () => {
+    togglePlay.innerHTML = '<i class="fa fa-play"></i>';
+    audio.currentTime = 0;
+  });
+}
+
+      /* ---- 照片轮播 + 翻转 + 双击大图功能 ---- */
+      function initPhotoCarousel(){
+        const carouselInner = document.getElementById('carouselInner');
+        const carouselNav = document.getElementById('carouselNav');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        let currentPage = 0;
+        const totalPages = photos.length;
+
+        // 创建轮播页面
+        photos.forEach((page, pageIndex) => {
+          // 页面容器
+          const pageElement = document.createElement('div');
+          pageElement.className = 'carousel-page';
+          
+          // 照片网格
+          const grid = document.createElement('div');
+          grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4';
+          
+          // 生成每页8张照片
+          page.forEach((src, photoIndex) => {
+            const globalIndex = pageIndex * 8 + photoIndex;
+            const color = backColors[Math.floor(Math.random() * backColors.length)];
+            
+            // 照片容器
+            const container = document.createElement('div');
+            container.className = 'photo-container rounded-2xl overflow-hidden shadow-md bg-cute-lightpink/50 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]';
+            
+            // 翻转卡片
+            const card = document.createElement('div');
+            card.className = 'photo-card h-full';
+            
+            // 照片正面
+            const front = document.createElement('div');
+            front.className = 'photo-front';
+            front.innerHTML = `<img src="${src}" alt="瞬间${globalIndex + 1}" class="w-full h-full object-cover">`;
+            
+            // 照片背面
+            const back = document.createElement('div');
+            back.className = 'photo-back';
+            back.style.setProperty('--back-color', color.main);
+            back.style.setProperty('--back-color-light', color.light);
+            back.textContent = photoQuotes[globalIndex];
+            
+            // 组装卡片
+            card.appendChild(front);
+            card.appendChild(back);
+            container.appendChild(card);
+            grid.appendChild(container);
+            
+            // 区分单击/双击事件
+            let clickTimer = null;
+            card.addEventListener('click', () => {
+              if (clickTimer) {
+                clearTimeout(clickTimer);
+                clickTimer = null;
+              }
+              // 单击：翻转照片
+              clickTimer = setTimeout(() => {
+                card.classList.toggle('flipped');
+              }, 250);
+            });
+
+            // 双击：查看大图
+            card.addEventListener('dblclick', () => {
+              if (clickTimer) {
+                clearTimeout(clickTimer);
+                clickTimer = null;
+              }
+              const imageViewer = document.getElementById('imageViewer');
+              const previewImage = document.getElementById('previewImage');
+              previewImage.src = src;
+              imageViewer.classList.remove('hidden');
+              setTimeout(() => {
+                imageViewer.classList.add('active');
+              }, 10);
+            });
+            
+            // 初始入场动画
+            container.style.opacity = '0';
+            container.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+              container.style.opacity = '1';
+              container.style.transform = 'translateY(0)';
+              container.style.transition = 'opacity .5s ease,transform .5s ease';
+            }, 300 + globalIndex * 50);
+          });
+          
+          pageElement.appendChild(grid);
+          carouselInner.appendChild(pageElement);
+          
+          // 导航点
+          const dot = document.createElement('button');
+          dot.className = `carousel-dot ${pageIndex === 0 ? 'active' : ''}`;
+          dot.addEventListener('click', () => {
+            goToPage(pageIndex);
+          });
+          carouselNav.appendChild(dot);
+        });
+        
+        // 轮播切换函数
+        function goToPage(pageIndex) {
+          currentPage = pageIndex;
+          carouselInner.style.transform = `translateX(-${currentPage * 100}%)`;
+          
+          // 更新导航点状态
+          document.querySelectorAll('.carousel-dot').forEach((dot, index) => {
+            dot.classList.toggle('active', index === currentPage);
+          });
+        }
+        
+        // 上一页
+        prevBtn.addEventListener('click', () => {
+          currentPage = (currentPage - 1 + totalPages) % totalPages;
+          goToPage(currentPage);
+        });
+        
+        // 下一页
+        nextBtn.addEventListener('click', () => {
+          currentPage = (currentPage + 1) % totalPages;
+          goToPage(currentPage);
+        });
+
+        // 大图查看器关闭功能
+        function closeImageViewer() {
+          const imageViewer = document.getElementById('imageViewer');
+          imageViewer.classList.remove('active');
+          setTimeout(() => {
+            imageViewer.classList.add('hidden');
+          }, 300);
+        }
+
+        // 关闭按钮
+        document.getElementById('closeImageViewer').addEventListener('click', closeImageViewer);
+        
+        // 点击背景关闭
+        document.getElementById('imageViewer').addEventListener('click', (e) => {
+          if (e.target === document.getElementById('imageViewer')) {
+            closeImageViewer();
+          }
+        });
+        
+        // ESC键关闭
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            const viewer = document.getElementById('imageViewer');
+            if (!viewer.classList.contains('hidden')) {
+              closeImageViewer();
+            }
+          }
+        });
+      }
+
+      /* ---- 满屏甜言蜜语功能 ---- */
+      function initLoveQuotes(){
+        const btn=document.getElementById('loveBtn');
+        const modal=document.getElementById('loveModal');
+        const close=document.getElementById('closeLoveModal');
+        const box=document.getElementById('quotesContainer');
+        let interval,showing=false;
+        let max=window.innerWidth<640?10:15;
+
+        // 关闭逻辑
+        function closeModal(){
+          showing=false;
+          modal.style.display='none';
+          clearInterval(interval);
+        }
+
+        // 绑定关闭事件（只绑定一次）
+        close.addEventListener('click', closeModal);
+        modal.addEventListener('click', e=>e.target===modal&&closeModal());
+        document.addEventListener('keydown', e=>e.key==='Escape'&&showing&&closeModal());
+        
+        // 窗口大小适配
+        window.addEventListener('resize',()=>{
+          max=window.innerWidth<640?10:15;
+        });
+
+        // 生成情话元素
+        function createQuote(){
+          const div=document.createElement('div');
+          const text=loveQuotes[Math.floor(Math.random()*loveQuotes.length)];
+          const color=colorClasses[Math.floor(Math.random()*colorClasses.length)];
+          
+          const fs=window.innerWidth<640?'clamp(1rem,4vw,1.5rem)':'clamp(1.2rem,3vw,2rem)';
+          const l=Math.random()*90;
+          const t=Math.random()*90;
+          const dur=3+Math.random()*2;
+          
+          div.className=`quote-item absolute font-bold text-shadow-cute ${color}`;
+          div.textContent=text;
+          div.style.fontSize=fs;
+          div.style.left=`${l}%`;
+          div.style.top=`${t}%`;
+          div.style.setProperty('--duration',`${dur}s`);
+          div.style.setProperty('--start-rotate',`${Math.random()*30-15}deg`);
+          div.style.setProperty('--mid-rotate',`${Math.random()*30-15}deg`);
+          div.style.setProperty('--end-rotate',`${Math.random()*30-15}deg`);
+          div.classList.add('quote-animation');
+          
+          box.appendChild(div);
+          setTimeout(()=>div.remove(),dur*1000);
+        }
+
+        // 按钮点击事件
+        btn.addEventListener('click',()=>{
+          if(showing)return;
+          showing=true;
+          modal.style.display='block';
+          box.innerHTML='';
+          
+          // 初始生成一批
+          for(let i=0;i<max/2;i++)createQuote();
+          
+          // 定时生成
+          interval=setInterval(()=>{
+            const all=box.querySelectorAll('.quote-item');
+            if(all.length>max){
+              all[0].style.opacity='0';
+              setTimeout(()=>all[0].remove(),300);
+            }
+            createQuote();
+          },200);
+        });
+      }
+
+      /* ---- 情书密码解锁功能 ---- */
+      function initLetter(){
+        const btn=document.getElementById('letterBtn');
+        const content=document.getElementById('letterContent');
+        const modal=document.getElementById('passwordModal');
+        const input=document.getElementById('passwordInput');
+        const toggle=document.getElementById('togglePassword');
+        const submit=document.getElementById('submitPassword');
+        const error=document.getElementById('passwordError');
+        let open=false,correct=false;
+
+        // 按钮点击
+        btn.addEventListener('click',()=>{
+          if(open){
+            // 收起信件
+            content.classList.remove('letter-expand');
+            content.classList.add('letter-collapse');
+            setTimeout(()=>content.style.display='none',600);
+            btn.innerHTML='<i class="fa fa-envelope"></i><span>给你的信</span>';
+            open=false;
+          } else {
+            // 打开信件
+            if(correct){
+              openLetter();
+            } else {
+              modal.classList.remove('hidden');
+              input.focus();
+            }
+          }
+        });
+
+        // 切换密码可见性
+        toggle.addEventListener('click',()=>{
+          const type=input.type==='password'?'text':'password';
+          input.type=type;
+          toggle.innerHTML=type==='password'?'<i class="fa fa-eye-slash"></i>':'<i class="fa fa-eye"></i>';
+        });
+
+        // 验证密码
+        function checkPassword(){
+          const value=input.value.trim();
+          if(value===CORRECT_PASSWORD){
+            correct=true;
+            modal.classList.add('hidden');
+            openLetter();
+          } else {
+            error.classList.remove('hidden');
+            input.classList.add('border-red-500');
+            setTimeout(()=>input.classList.remove('border-red-500'),2000);
+          }
+        }
+
+        // 提交密码
+        submit.addEventListener('click',checkPassword);
+        input.addEventListener('keydown',e=>e.key==='Enter'&&checkPassword());
+
+        // 打开信件
+        function openLetter(){
+          content.style.display='block';
+          content.classList.remove('letter-collapse');
+          content.classList.add('letter-expand');
+          btn.innerHTML='<i class="fa fa-envelope-o"></i><span>收起信件</span>';
+          open=true;
+          setTimeout(()=>{
+            content.scrollIntoView({behavior:'smooth',block:'start'});
+          },100);
+        }
+      }
+
+      /* ---- 鼠标跟随爱心功能 ---- */
+      function initMouseHeart(){
+        const box=document.getElementById('mouseHearts');
+        let last=0,delay=50;
+
+        document.addEventListener('mousemove',e=>{
+          const now=Date.now();
+          if(now-last<delay)return;
+          last=now;
+
+          // 创建爱心
+          const heart=document.createElement('div');
+          const size=8+Math.random()*8;
+          const color=heartColors[Math.floor(Math.random()*heartColors.length)];
+          const rotateX=Math.random()*30-15;
+          const rotateY=Math.random()*30-15;
+          const duration=1+Math.random()*1;
+          const offsetX=Math.random()*20-10;
+          const offsetY=Math.random()*20-10;
+          const finalX=Math.random()*30-15;
+          const finalY=-30-Math.random()*20;
+
+          // 设置样式
+          heart.innerHTML='<i class="fa fa-heart"></i>';
+          heart.style.cssText=`
+            position:absolute;
+            left:${e.clientX+offsetX}px;
+            top:${e.clientY+offsetY}px;
+            font-size:${size}px;
+            color:${color};
+            transform:translate(-50%,-50%) rotate(${rotateX}deg);
+            z-index:10;
+            pointer-events:none;
+          `;
+          heart.style.setProperty('--heart-duration',`${duration}s`);
+          heart.style.setProperty('--heart-rotate',`${rotateX}deg`);
+          heart.style.setProperty('--heart-rotate-end',`${rotateY}deg`);
+          heart.style.setProperty('--heart-x',`${finalX}px`);
+          heart.style.setProperty('--heart-y',`${finalY}px`);
+          heart.classList.add('heart-float');
+
+          // 添加到页面
+          box.appendChild(heart);
+          setTimeout(()=>heart.remove(),duration*1000);
+        });
+      }
+
+      /* ---- 背景飘动爱心生成 ---- */
+      function createFloatingHearts() {
+        const container = document.getElementById('floatingHearts');
+        const colors = ['text-cute-pink', 'text-cute-purple', 'text-cute-yellow', 'text-cute-rose', 'text-cute-mint', 'text-cute-lavender'];
+        const sizes = ['text-xs', 'text-sm', 'text-base', 'text-lg', 'text-xl'];
+        const total = 20; // 爱心数量
+
+        // 清空容器
+        container.innerHTML = '';
+
+        // 生成爱心
+        for (let i = 0; i < total; i++) {
+          const heart = document.createElement('i');
+          // 随机属性
+          const color = colors[Math.floor(Math.random() * colors.length)];
+          const size = sizes[Math.floor(Math.random() * sizes.length)];
+          const top = Math.random() * 100;
+          const left = Math.random() * 100;
+          const duration = 8 + Math.random() * 10;
+          const delay = Math.random() * 5;
+          const opacity = 0.3 + Math.random() * 0.4;
+
+          // 设置样式
+          heart.className = `fa fa-heart ${color} ${size} absolute float-cute`;
+          heart.style.top = `${top}%`;
+          heart.style.left = `${left}%`;
+          heart.style.animationDuration = `${duration}s`;
+          heart.style.animationDelay = `${delay}s`;
+          heart.style.opacity = opacity;
+
+          // 添加到容器
+          container.appendChild(heart);
+        }
+      }
+
+      /* ---- 初始化所有功能 ---- */
+      document.addEventListener('DOMContentLoaded',()=>{
+        initTimeCounter();       // 计时
+        initPhotoCarousel();     // 照片轮播
+        initLoveQuotes();        // 满屏情话
+        initLetter();            // 情书
+        initMouseHeart();        // 鼠标爱心
+        createFloatingHearts();  // 背景爱心
+        initAudioPlayer();
+      });
+    })();
+  </script>
+</body>
+</html>
